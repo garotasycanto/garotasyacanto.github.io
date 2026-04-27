@@ -1395,10 +1395,11 @@ document.getElementById('btn-manage-services').addEventListener('click', () => {
 function renderServicesEditor() {
   const editor = document.getElementById('services-editor');
   editor.innerHTML = SERVICES.map((s) => `
-    <div class="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/60 p-4 shadow-sm">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-xl" aria-hidden="true">${s.emoji}</span>
-        <h3 class="font-bold text-on-surface text-sm">${s.name}</h3>
+    <div id="svc-card-${s.id}" class="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/60 p-4 shadow-sm">
+      <div class="mb-2">
+        <label class="block text-xs font-bold text-on-surface-variant mb-1" for="svc-name-${s.id}">Nombre</label>
+        <input id="svc-name-${s.id}" type="text" value="${s.name}"
+          class="w-full bg-white/50 border border-white/60 rounded-xl px-3 py-2 text-on-surface text-sm transition-colors" />
       </div>
       <div class="grid grid-cols-2 gap-2 mb-3">
         <div>
@@ -1412,24 +1413,106 @@ function renderServicesEditor() {
             class="w-full bg-white/50 border border-white/60 rounded-xl px-3 py-2 text-on-surface text-sm transition-colors" />
         </div>
       </div>
-      <button onclick="saveService('${s.id}')"
-        class="w-full h-9 rounded-xl bg-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
-        aria-label="Guardar cambios de ${s.name}">
-        <span class="material-symbols-outlined text-base" aria-hidden="true">save</span>
-        Guardar
-      </button>
+      <div class="flex gap-2">
+        <button onclick="saveService('${s.id}')"
+          class="flex-1 h-9 rounded-xl bg-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">save</span>
+          Guardar
+        </button>
+        <button onclick="deleteService('${s.id}')"
+          class="h-9 px-3 rounded-xl bg-error-container text-error font-semibold text-sm hover:opacity-80 transition-opacity flex items-center justify-center"
+          aria-label="Eliminar servicio ${s.name}">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">delete</span>
+        </button>
+      </div>
       <p id="svc-msg-${s.id}" class="text-xs text-center mt-2 hidden"></p>
     </div>
-  `).join('');
+  `).join('') + `
+    <div class="bg-white/60 backdrop-blur-xl rounded-2xl border border-dashed border-primary/40 p-4 shadow-sm">
+      <h3 class="font-bold text-on-surface text-sm mb-3">+ Agregar nuevo servicio</h3>
+      <div class="mb-2">
+        <label class="block text-xs font-bold text-on-surface-variant mb-1" for="new-svc-name">Nombre</label>
+        <input id="new-svc-name" type="text" placeholder="Ej: Diseño de cejas"
+          class="w-full bg-white/50 border border-white/60 rounded-xl px-3 py-2 text-on-surface text-sm transition-colors" />
+      </div>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <div>
+          <label class="block text-xs font-bold text-on-surface-variant mb-1" for="new-svc-price">Precio ($)</label>
+          <input id="new-svc-price" type="number" inputmode="numeric" placeholder="15000"
+            class="w-full bg-white/50 border border-white/60 rounded-xl px-3 py-2 text-on-surface text-sm transition-colors" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-on-surface-variant mb-1" for="new-svc-dur">Duración (min)</label>
+          <input id="new-svc-dur" type="number" inputmode="numeric" placeholder="60"
+            class="w-full bg-white/50 border border-white/60 rounded-xl px-3 py-2 text-on-surface text-sm transition-colors" />
+        </div>
+      </div>
+      <button onclick="addNewService()"
+        class="w-full h-9 rounded-xl bg-gradient-to-r from-secondary to-primary text-white font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-1">
+        <span class="material-symbols-outlined text-base" aria-hidden="true">add</span>
+        Agregar servicio
+      </button>
+      <p id="new-svc-msg" class="text-xs text-center mt-2 hidden"></p>
+    </div>
+  `;
+}
+
+async function deleteService(serviceId) {
+  if (!confirm('Eliminar este servicio?')) return;
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteService', id: serviceId, token: state.adminToken }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      SERVICES = SERVICES.filter((s) => s.id !== serviceId);
+      renderServices();
+      renderServicesEditor();
+    }
+  } catch (e) { console.warn(e); }
+}
+
+async function addNewService() {
+  const name  = document.getElementById('new-svc-name').value.trim();
+  const price = parseInt(document.getElementById('new-svc-price').value, 10);
+  const dur   = parseInt(document.getElementById('new-svc-dur').value, 10);
+  const msgEl = document.getElementById('new-svc-msg');
+
+  if (!name)          { showSvcMsg(msgEl, 'Ingresa el nombre.', false); return; }
+  if (!price || price < 0) { showSvcMsg(msgEl, 'Precio invalido.', false); return; }
+  if (!dur   || dur < 0)   { showSvcMsg(msgEl, 'Duracion invalida.', false); return; }
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'addService', name, price, duration: dur, token: state.adminToken }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      SERVICES.push({ id: data.id, name, price, duration: dur, desc: '', badge: '', emoji: '✂️' });
+      renderServices();
+      renderServicesEditor();
+    } else {
+      showSvcMsg(msgEl, 'Error al agregar.', false);
+    }
+  } catch (e) {
+    showSvcMsg(msgEl, 'Error de conexion.', false);
+  }
 }
 
 async function saveService(serviceId) {
+  const nameInput  = document.getElementById(`svc-name-${serviceId}`);
   const priceInput = document.getElementById(`svc-price-${serviceId}`);
   const durInput   = document.getElementById(`svc-dur-${serviceId}`);
   const msgEl      = document.getElementById(`svc-msg-${serviceId}`);
+  const newName    = nameInput.value.trim();
   const newPrice   = parseInt(priceInput.value, 10);
   const newDur     = parseInt(durInput.value, 10);
 
+  if (!newName)                  { showSvcMsg(msgEl, 'El nombre no puede estar vacío.', false); return; }
   if (!newPrice || newPrice < 0) { showSvcMsg(msgEl, 'Precio inválido.', false); return; }
   if (!newDur   || newDur < 0)   { showSvcMsg(msgEl, 'Duración inválida.', false); return; }
 
@@ -1437,19 +1520,19 @@ async function saveService(serviceId) {
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateService', id: serviceId, price: newPrice, duration: newDur, token: state.adminToken }),
+      body: JSON.stringify({ action: 'updateService', id: serviceId, name: newName, price: newPrice, duration: newDur, token: state.adminToken }),
     });
     const data = await res.json();
     if (data.success) {
       const svc = SERVICES.find((s) => s.id === serviceId);
-      if (svc) { svc.price = newPrice; svc.duration = newDur; }
+      if (svc) { svc.name = newName; svc.price = newPrice; svc.duration = newDur; }
       renderServices();
-      showSvcMsg(msgEl, '✅ Guardado correctamente.', true);
+      showSvcMsg(msgEl, 'Guardado correctamente.', true);
     } else {
-      showSvcMsg(msgEl, '❌ Error al guardar.', false);
+      showSvcMsg(msgEl, 'Error al guardar.', false);
     }
   } catch (e) {
-    showSvcMsg(msgEl, '❌ Error de conexión.', false);
+    showSvcMsg(msgEl, 'Error de conexion.', false);
   }
 }
 

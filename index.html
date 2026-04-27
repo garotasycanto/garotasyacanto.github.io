@@ -389,7 +389,7 @@
       <div>
         <h3 class="font-bold text-on-surface mb-1">Seña requerida</h3>
         <p class="text-sm text-on-surface-variant">Para confirmar tu turno enviá una seña de <strong class="text-secondary">$5.000</strong> al alias:</p>
-        <p class="mt-1 font-mono bg-white/70 px-2 py-1 rounded-lg text-primary font-bold text-sm inline-block" translate="no">martubienestarysalud</p>
+        <p class="mt-1 font-mono bg-white/70 px-2 py-1 rounded-lg text-primary font-bold text-sm inline-block" translate="no">bienestarysalud.isa</p>
         <p class="text-xs text-on-surface-variant mt-1">Mercado Pago / transferencia CBU</p>
       </div>
     </div>
@@ -1076,7 +1076,7 @@ function showSuccessView(name, phone, bookingId) {
     `• Hora: ${timeStr}\n` +
     `• Nombre: ${name}\n` +
     `• Código: ${bookingId}\n\n` +
-    `Ya estoy haciendo la seña de $5.000 al alias martubienestarysalud 🙏`
+    `Ya estoy haciendo la seña de $5.000 al alias bienestarysalud.isa 🙏`
   );
   document.getElementById('whatsapp-link').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
 
@@ -1088,7 +1088,7 @@ function showSuccessView(name, phone, bookingId) {
       `https://calendar.google.com/calendar/render?action=TEMPLATE` +
       `&text=${encodeURIComponent('Turno en Garotas Nails')}` +
       `&dates=${toGCalFmt(start)}/${toGCalFmt(end)}` +
-      `&details=${encodeURIComponent(`Servicio: ${s.name}\nCódigo: ${bookingId}\nWhatsApp: +54 9 3546 52-0727\nAlias seña: martubienestarysalud`)}` +
+      `&details=${encodeURIComponent(`Servicio: ${s.name}\nCódigo: ${bookingId}\nWhatsApp: +54 9 3546 52-0727\nAlias seña: bienestarysalud.isa`)}` +
       `&location=${encodeURIComponent('Villa Yacanto de Calamuchita, Córdoba, Argentina')}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };

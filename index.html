@@ -1561,7 +1561,18 @@ async function loadServicesFromGAS() {
     const res = await fetch(`${GAS_URL}?action=getServices`);
     const data = await res.json();
     if (data.services && data.services.length) {
-      SERVICES = data.services;
+      SERVICES = data.services.map((s) => {
+        const def = SERVICES.find((d) => d.id === s.id) || {};
+        return {
+          id:       s.id,
+          name:     s.name     || def.name     || '',
+          price:    s.price    || def.price     || 0,
+          duration: s.duration || def.duration  || 60,
+          desc:     def.desc   || '',
+          badge:    def.badge  || '',
+          emoji:    def.emoji  || '✂️',
+        };
+      });
     }
   } catch (e) {
     // Usa los servicios por defecto definidos arriba
